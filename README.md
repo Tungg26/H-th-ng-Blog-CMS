@@ -1,7 +1,28 @@
-# Blog CMS
+# Hệ thống Blog / CMS
 
-Bộ mã nguồn và cấu hình Docker cho hệ thống WordPress CMS. Repository được đặt
-theo mã số sinh viên `20230001`.
+Website blog/CMS được xây dựng bằng WordPress, triển khai với MySQL, phpMyAdmin
+và Nginx. Repository được đặt theo mã số sinh viên `20230001`.
+
+## Chức năng CMS
+
+- Soạn, chỉnh sửa, xuất bản và quản lý bài viết.
+- Tạo và gán danh mục cho bài viết.
+- Quản lý người dùng WordPress theo vai trò như Administrator, Editor, Author
+  và Contributor.
+- MySQL lưu dữ liệu website; phpMyAdmin cung cấp giao diện quản lý database.
+
+## Thiết lập lần đầu
+
+Stack đã triển khai sẽ hiển thị trang cài đặt WordPress. Mở
+`https://localhost:8448`, chọn ngôn ngữ, đặt tên website và tự tạo tài khoản
+quản trị. Sau khi cài đặt:
+
+- Trang blog: `https://localhost:8448/`
+- Trang quản trị bài viết, danh mục và người dùng:
+  `https://localhost:8448/wp-admin/`
+- Trình quản lý database: `https://localhost:8448/pma/`
+
+Tự đặt và lưu an toàn thông tin đăng nhập quản trị; không đưa mật khẩu vào Git.
 
 ## Thành phần
 
@@ -46,9 +67,9 @@ Cần cài Docker Desktop (bao gồm Docker Compose) và OpenSSL.
    docker compose up -d
    ```
 
-   Truy cập WordPress tại `https://localhost:8448` và phpMyAdmin tại
-   `https://localhost:8448/pma/`. HTTP tại `http://localhost:8088` sẽ chuyển sang
-   HTTPS. Trình duyệt có thể cần xác nhận cảnh báo do chứng thư tự ký.
+   Truy cập trang cài đặt WordPress tại `https://localhost:8448` và phpMyAdmin
+   tại `https://localhost:8448/pma/`. HTTP tại `http://localhost:8088` sẽ chuyển
+   sang HTTPS. Trình duyệt có thể cần xác nhận cảnh báo do chứng thư tự ký.
 
 4. Dừng các dịch vụ khi không sử dụng:
 
@@ -63,16 +84,15 @@ username hoặc tên hiển thị theo hướng dẫn của trường. GitHub kh
 người dùng đó còn trống. Tạo repository công khai/riêng tên `20230001` (không
 tạo README từ GitHub vì README đã có trong repository này).
 
-Đặt tên tác giả commit theo mã số sinh viên và email đã xác minh trên GitHub:
+Đặt tên tác giả commit theo yêu cầu của dự án. Repository này hiện dùng tên
+`Hệ thống` và email noreply của GitHub:
 
 ```powershell
-git config user.name "20230001"
-git config user.email "YOUR_VERIFIED_GITHUB_EMAIL"
+git config user.name "Hệ thống"
+git config user.email "Tungg26@users.noreply.github.com"
 git add .
 git status
-git commit -m "Add Blog CMS deployment configuration"
-git branch -M main
-git remote add origin https://github.com/YOUR_GITHUB_USERNAME/20230001.git
+git commit -m "Describe the change"
 git push -u origin main
 ```
 
