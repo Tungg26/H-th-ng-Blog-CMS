@@ -27,13 +27,14 @@ Tự đặt và lưu an toàn thông tin đăng nhập quản trị; không đư
 ## Thành phần
 
 - `docker-compose.yml`: MySQL, WordPress, phpMyAdmin, Nginx, Prometheus,
-  Grafana và exporters.
+  Grafana, Loki, Promtail và exporters.
 - `nginx/nginx.conf`: reverse proxy HTTP sang HTTPS, WordPress và phpMyAdmin.
 - `nginx/certs/`: chứng thư TLS công khai; khóa riêng `cert.key` không được đưa
   lên Git.
 - Nginx giới hạn TLS ở phiên bản 1.2/1.3, ẩn phiên bản server và thêm các
   security headers cơ bản. Chứng thư tự ký chỉ dành cho môi trường local.
-- `monitoring/`: cấu hình Prometheus, Grafana datasource/dashboard và Promtail.
+- `monitoring/`: cấu hình Prometheus, Grafana datasource/dashboard, Loki và
+  Promtail.
 - cAdvisor theo dõi tài nguyên container; Nginx Prometheus Exporter thu thập
   trạng thái web server; MySQL Exporter thu thập metrics database bằng tài
   khoản ứng dụng với quyền metrics cần thiết, không dùng tài khoản root.
@@ -86,6 +87,18 @@ Cần cài Docker Desktop (bao gồm Docker Compose) và OpenSSL.
   trạng thái các scrape targets. Script `monitoring/mysql-exporter-init.sh`
   cấp các quyền đọc metrics cho tài khoản MySQL ứng dụng ở lần khởi tạo database
   mới.
+- Loki lưu log 7 ngày trong Docker volume; Promtail dùng Docker socket để thu
+  log container thuộc Compose project này. Quyền đọc Docker socket có thể cấp
+  quyền quản trị Docker, vì vậy chỉ chạy stack này trên máy đáng tin cậy.
+- Trong Grafana Explore, chọn datasource **Loki** và thử các truy vấn LogQL:
+
+  ```logql
+  {service="wordpress"}
+  {service="nginx"}
+  {service="nginx"} |= "error"
+  ```
+
+  Loki API cục bộ (chỉ bind vào localhost): `http://localhost:3101`.
 
 Nếu đang nâng cấp một database volume đã khởi tạo trước khi bật MySQL Exporter,
 chạy một lần lệnh sau bằng tài khoản MySQL root (thay `wordpress` bằng giá trị
