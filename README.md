@@ -30,6 +30,8 @@ Tự đặt và lưu an toàn thông tin đăng nhập quản trị; không đư
 - `nginx/nginx.conf`: reverse proxy HTTP sang HTTPS, WordPress và phpMyAdmin.
 - `nginx/certs/`: chứng thư TLS công khai; khóa riêng `cert.key` không được đưa
   lên Git.
+- Nginx giới hạn TLS ở phiên bản 1.2/1.3, ẩn phiên bản server và thêm các
+  security headers cơ bản. Chứng thư tự ký chỉ dành cho môi trường local.
 - `monitoring/`: vị trí các cấu hình Prometheus và Promtail. Hai file hiện đang
   để trống và chưa được kết nối với service nào trong Docker Compose.
 - `.env.example`: mẫu biến môi trường; không chứa mật khẩu thật.
