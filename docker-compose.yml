@@ -6,6 +6,7 @@ services:
     env_file: .env
     volumes:
       - db_data:/var/lib/mysql
+      - ./monitoring/mysql-exporter-init.sh:/docker-entrypoint-initdb.d/10-mysql-exporter.sh:ro
     networks:
       - backend_net
     healthcheck:
@@ -47,6 +48,80 @@ services:
       - frontend_net
       - backend_net
 
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    networks:
+      - monitoring_net
+
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:1.4.2
+    restart: unless-stopped
+    command:
+      - --nginx.scrape-uri=http://nginx:8080/stub_status
+    depends_on:
+      - nginx
+    networks:
+      - frontend_net
+      - monitoring_net
+
+  mysql-exporter:
+    image: prom/mysqld-exporter:v0.17.2
+    restart: unless-stopped
+    command:
+      - --mysqld.address=db:3306
+      - --mysqld.username=${MYSQL_USER:?Set MYSQL_USER in .env}
+    environment:
+      MYSQLD_EXPORTER_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend_net
+      - monitoring_net
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    ports:
+      - "127.0.0.1:9091:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - cadvisor
+      - nginx-exporter
+      - mysql-exporter
+    networks:
+      - monitoring_net
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring_net
+
   nginx:
     image: nginx:alpine
     restart: unless-stopped
@@ -62,7 +137,11 @@ services:
 volumes:
   db_data:
   wordpress_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
   frontend_net:
   backend_net:
+    internal: true
+  monitoring_net:

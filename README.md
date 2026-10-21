@@ -26,14 +26,17 @@ Tự đặt và lưu an toàn thông tin đăng nhập quản trị; không đư
 
 ## Thành phần
 
-- `docker-compose.yml`: MySQL, WordPress, phpMyAdmin và Nginx.
+- `docker-compose.yml`: MySQL, WordPress, phpMyAdmin, Nginx, Prometheus,
+  Grafana và exporters.
 - `nginx/nginx.conf`: reverse proxy HTTP sang HTTPS, WordPress và phpMyAdmin.
 - `nginx/certs/`: chứng thư TLS công khai; khóa riêng `cert.key` không được đưa
   lên Git.
 - Nginx giới hạn TLS ở phiên bản 1.2/1.3, ẩn phiên bản server và thêm các
   security headers cơ bản. Chứng thư tự ký chỉ dành cho môi trường local.
-- `monitoring/`: vị trí các cấu hình Prometheus và Promtail. Hai file hiện đang
-  để trống và chưa được kết nối với service nào trong Docker Compose.
+- `monitoring/`: cấu hình Prometheus, Grafana datasource/dashboard và Promtail.
+- cAdvisor theo dõi tài nguyên container; Nginx Prometheus Exporter thu thập
+  trạng thái web server; MySQL Exporter thu thập metrics database bằng tài
+  khoản ứng dụng với quyền metrics cần thiết, không dùng tài khoản root.
 - `.env.example`: mẫu biến môi trường; không chứa mật khẩu thật.
 
 ## Chạy trên máy cá nhân
@@ -72,6 +75,25 @@ Cần cài Docker Desktop (bao gồm Docker Compose) và OpenSSL.
    Truy cập trang cài đặt WordPress tại `https://localhost:8448` và phpMyAdmin
    tại `https://localhost:8448/pma/`. HTTP tại `http://localhost:8088` sẽ chuyển
    sang HTTPS. Trình duyệt có thể cần xác nhận cảnh báo do chứng thư tự ký.
+
+- Mở Grafana tại `http://localhost:3001`, đăng nhập mặc định lần đầu bằng
+  `admin` / `admin` và đổi mật khẩu ngay sau khi đăng nhập. Dashboard **Blog CMS
+  Overview** được nạp sẵn.
+- Mở Prometheus tại `http://localhost:9091` để xem trạng thái scrape targets.
+  Cả hai giao diện giám sát chỉ bind vào localhost; không công khai trực tiếp
+  lên mạng.
+- Dashboard giám sát gồm CPU/RAM container, kết nối Nginx, số kết nối MySQL và
+  trạng thái các scrape targets. Script `monitoring/mysql-exporter-init.sh`
+  cấp các quyền đọc metrics cho tài khoản MySQL ứng dụng ở lần khởi tạo database
+  mới.
+
+Nếu đang nâng cấp một database volume đã khởi tạo trước khi bật MySQL Exporter,
+chạy một lần lệnh sau bằng tài khoản MySQL root (thay `wordpress` bằng giá trị
+`MYSQL_USER` trong `.env`):
+
+```sql
+GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO 'wordpress'@'%';
+```
 
 4. Dừng các dịch vụ khi không sử dụng:
 
