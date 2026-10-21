@@ -37,6 +37,8 @@ Cần cài Docker Desktop (bao gồm Docker Compose) và OpenSSL.
    ```
 
    `nginx/certs/cert.key` đã được thêm vào `.gitignore`. Không chia sẻ khóa riêng.
+   Nginx dùng cổng `8088` và `8448` trên máy host để tránh xung đột với dịch vụ
+   khác đang sử dụng cổng HTTP/HTTPS mặc định.
 
 3. Khởi động các dịch vụ:
 
@@ -44,9 +46,9 @@ Cần cài Docker Desktop (bao gồm Docker Compose) và OpenSSL.
    docker compose up -d
    ```
 
-   Truy cập WordPress tại `https://localhost` và phpMyAdmin tại
-   `https://localhost/pma/`. Trình duyệt có thể cần xác nhận cảnh báo do chứng thư
-   tự ký.
+   Truy cập WordPress tại `https://localhost:8448` và phpMyAdmin tại
+   `https://localhost:8448/pma/`. HTTP tại `http://localhost:8088` sẽ chuyển sang
+   HTTPS. Trình duyệt có thể cần xác nhận cảnh báo do chứng thư tự ký.
 
 4. Dừng các dịch vụ khi không sử dụng:
 
