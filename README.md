@@ -33,8 +33,28 @@ Tự đặt và lưu an toàn thông tin đăng nhập quản trị; không đư
   lên Git.
 - Nginx giới hạn TLS ở phiên bản 1.2/1.3, ẩn phiên bản server và thêm các
   security headers cơ bản. Chứng thư tự ký chỉ dành cho môi trường local.
+- MySQL root và application passwords trên máy triển khai đã được xoay sang hai
+  secret ngẫu nhiên 64 ký tự hex riêng biệt; chúng chỉ nằm trong `.env` bị
+  ignore và không được chia sẻ/commit.
+- Nginx, exporters, Prometheus, Grafana và Loki chạy non-root, filesystem
+  read-only, bỏ capabilities và bật `no-new-privileges`. Backend database là
+  network nội bộ, không publish cổng MySQL ra host.
+- WordPress, phpMyAdmin và MySQL dùng entrypoint của image upstream để khởi
+  tạo dữ liệu rồi hạ quyền tiến trình ứng dụng; không ép UID cho các container
+  này để tránh phá quyền volume. Promtail cần quyền root trong container để đọc
+  Docker socket; cAdvisor cần privileged để thu thập metrics. Đây là các quyền
+  đặc biệt chỉ dành cho monitoring, không cấp cho Nginx/WordPress.
 - `monitoring/`: cấu hình Prometheus, Grafana datasource/dashboard, Loki và
   Promtail.
+- Các exporter, Prometheus, Grafana, Loki và Nginx chạy non-root với filesystem
+  read-only, chỉ cấp volume/tmpfs để ghi dữ liệu cần thiết, bỏ Linux
+  capabilities và bật `no-new-privileges`. MySQL và WordPress dùng image
+  upstream có entrypoint cần khởi chạy bằng root để khởi tạo rồi hạ quyền tiến
+  trình ứng dụng; không áp đặt UID thủ công để tránh làm hỏng volume/entrypoint.
+- Promtail cần quyền root trong container để đọc Docker socket; quyền với socket
+  tương đương quyền quản trị Docker. cAdvisor cần quyền privileged để đọc
+  metrics container. Hai ngoại lệ này được giữ ở phạm vi monitoring và không
+  cấp socket/privileged cho ứng dụng web.
 - cAdvisor theo dõi tài nguyên container; Nginx Prometheus Exporter thu thập
   trạng thái web server; MySQL Exporter thu thập metrics database bằng tài
   khoản ứng dụng với quyền metrics cần thiết, không dùng tài khoản root.
@@ -48,9 +68,21 @@ Cần cài Docker Desktop (bao gồm Docker Compose) và OpenSSL.
 
    ```powershell
    Copy-Item .env.example .env
+   $rootSecret = openssl rand -hex 32
+   $appSecret = openssl rand -hex 32
+   $envText = (Get-Content .env -Raw).Replace(
+     'replace_with_a_unique_64_character_hex_secret', $rootSecret
+   ).Replace(
+     'replace_with_a_different_unique_64_character_hex_secret', $appSecret
+   )
+   [System.IO.File]::WriteAllText(
+     (Resolve-Path .env), $envText, [System.Text.UTF8Encoding]::new($false)
+   )
    ```
 
-   Sửa các giá trị mật khẩu trong `.env`. Không commit file này.
+   Mỗi password cần là một giá trị hex ngẫu nhiên 64 ký tự khác nhau. Nếu dùng giá
+   trị riêng, tránh dấu nháy, dấu `$` và dấu `#` trong mật khẩu để không bị diễn
+   giải bởi Compose. `.env` không được commit.
 
 2. Tạo khóa riêng và chứng thư TLS tự ký cho `localhost` (không dùng chứng thư
    này cho môi trường production):
