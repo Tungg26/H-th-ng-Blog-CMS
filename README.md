@@ -26,8 +26,8 @@ Tự đặt và lưu an toàn thông tin đăng nhập quản trị; không đư
 
 ## Thành phần
 
-- `docker-compose.yml`: MySQL, WordPress, phpMyAdmin, Nginx, Prometheus,
-  Grafana, Loki, Promtail và exporters.
+- `docker-compose.yml`: MySQL, WordPress 7.1.3, phpMyAdmin, Nginx, Prometheus,
+  Grafana 13.2.2, Loki, Promtail và exporters.
 - `nginx/nginx.conf`: reverse proxy HTTP sang HTTPS, WordPress và phpMyAdmin.
 - `nginx/certs/`: chứng thư TLS công khai; khóa riêng `cert.key` không được đưa
   lên Git.
@@ -51,6 +51,8 @@ Tự đặt và lưu an toàn thông tin đăng nhập quản trị; không đư
   capabilities và bật `no-new-privileges`. MySQL và WordPress dùng image
   upstream có entrypoint cần khởi chạy bằng root để khởi tạo rồi hạ quyền tiến
   trình ứng dụng; không áp đặt UID thủ công để tránh làm hỏng volume/entrypoint.
+  Grafana tắt cài plugin tự động vì Prometheus/Loki đã được provision và image
+  chạy với root filesystem chỉ đọc.
 - Promtail cần quyền root trong container để đọc Docker socket; quyền với socket
   tương đương quyền quản trị Docker. cAdvisor cần quyền privileged để đọc
   metrics container. Hai ngoại lệ này được giữ ở phạm vi monitoring và không
@@ -63,6 +65,10 @@ Tự đặt và lưu an toàn thông tin đăng nhập quản trị; không đư
 ## Chạy trên máy cá nhân
 
 Cần cài Docker Desktop (bao gồm Docker Compose) và OpenSSL.
+
+WordPress và Grafana được ghim theo phiên bản trong `docker-compose.yml` để
+triển khai có thể lặp lại. Khi nâng cấp WordPress, sao lưu database và
+`wordpress_data` trước; image WordPress dùng volume này cho mã nguồn và nội dung.
 
 1. Tạo file biến môi trường từ mẫu:
 
